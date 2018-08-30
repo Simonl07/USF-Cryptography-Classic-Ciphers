@@ -1,4 +1,5 @@
 import argparse
+import random
 
 base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -13,7 +14,8 @@ def main():
     algo_map = {
         'caesar': Caesar,
         'vigenere': Vigenere,
-        'wolseley': Wolseley
+        'wolseley': Wolseley,
+        'zigzag' : ZigZagTranspositionCipher
     }
     cipher = algo_map[args.algorithm]()
 
@@ -84,7 +86,6 @@ class Vigenere(SubstitutionCipher):
         return output
 
 class Wolseley(SubstitutionCipher):
-
     def setup_permutation(key):
         grid = []
         rest = SubstitutionCipher.base
@@ -105,7 +106,6 @@ class Wolseley(SubstitutionCipher):
                     permutation += (grid[24 - grid.index("J")])
             else:
                 permutation += (grid[24 - grid.index(alpha)])
-
         return permutation
 
     def encrypt(self, text, key):
@@ -121,6 +121,51 @@ class Wolseley(SubstitutionCipher):
         output = ""
         for c in text:
             output += SubstitutionCipher.decrypt(self, c)
+        return output
+
+class ZigZagTranspositionCipher:
+
+    def setup_grid(text, length):
+        grid = [text[i:min(i+length, len(text))] for i in range(0, len(text), length)]
+        if len(grid[-1]) != length:
+            for i in range(length - len(grid[-1])):
+                grid[-1] += random.choice(SubstitutionCipher.base)
+
+        reverse = False
+        for i in range(len(grid)):
+            if reverse:
+                grid[i] = grid[i][::-1]
+            reverse = not reverse
+
+        return grid
+
+    def encrypt(self, text, key):
+        length = int(key)
+        grid = ZigZagTranspositionCipher.setup_grid(text, length)
+        index = 0
+        output = ""
+        for i in range(length):
+            for s in grid:
+                output += s[i]
+
+        return output
+
+    def decrypt(self, text, key):
+        length = len(text) // int(key)
+        grid = [text[i:min(i+length, len(text))] for i in range(0, len(text), length)]
+
+        index = 0
+        output = ""
+        reverse = False
+        for i in range(length):
+            if reverse:
+                for j in range(len(grid) - 1, -1, -1):
+                    output += grid[j][i]
+            else:
+                for j in range(len(grid)):
+                    output += grid[j][i]
+            reverse = not reverse
+
         return output
 
 
